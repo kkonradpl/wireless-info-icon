@@ -11,4 +11,4 @@ add_executable(wireless-info-icon
     Config.hpp
 )
 
-target_link_libraries(wireless-info-icon Qt5::Widgets)
+target_link_libraries(wireless-info-icon Qt6::Widgets)

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(wireless-info-icon VERSION 1.0.0 LANGUAGES CXX)
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
