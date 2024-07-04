@@ -1,7 +1,7 @@
 /*  SPDX-License-Identifier: GPL-3.0-or-later
  *
  *  wireless-info-icon
- *  Copyright (C) 2023  Konrad Kosmatka
+ *  Copyright (C) 2023-2024  Konrad Kosmatka
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #include <getopt.h>
 #include "Icon.hpp"
 
-#define WIRELESS_INFO_ICON_VERSION "1.0"
+#define WIRELESS_INFO_ICON_VERSION "1.1"
 
 template<typename T>
 std::ostream& operator<<(std::ostream& stream, std::vector<T> v)
@@ -40,7 +40,8 @@ printUsage()
 
     std::cout << "wireless-info-icon " WIRELESS_INFO_ICON_VERSION << std::endl;
     std::cout << "usage: wireless-info-icon [-i wlan] [-f font] [-c color] [-h size]" << std::endl;
-    std::cout << "                          [-s size] [-u interval] [-p txp] [-r refresh]" << std::endl;
+    std::cout << "                          [-s size] [-u interval] [-p txp] [-C color]" << std::endl;
+    std::cout << "                          [-r refresh]" << std::endl;
     std::cout << "options:" << std::endl;
     std::cout << "-i  wlan interface name (default: " << defConf.name << ")" << std::endl;
     std::cout << "-f  font name (default: " << defConf.font << ")" << std::endl;
@@ -50,6 +51,7 @@ printUsage()
     std::cout << "-u  icon update interval [ms] (default: " << defConf.interval << " ms)" << std::endl;
     std::cout << "-p  tx power step [dBm] (default " << defConf.txPowerSteps << " dBm)" << std::endl;
     std::cout << "    (firstly added step is the initial value)" << std::endl;
+    std::cout << "-C  font color per power step (default the same as normal font color)" << std::endl;
     std::cout << "-r  tx power refresh interval [ms] (default " << defConf.txPowerRefreshInterval << " ms)" << std::endl;
     std::cout << "    (for cards that do not obey the fixed tx power in the long-term)" << std::endl;
     std::cout << std::endl;
@@ -66,7 +68,7 @@ parseConfig(int   argc,
     bool defaultTxPowerSteps = true;
 
     int c;
-    while ((c = getopt(argc, argv, "i:f:c:S:s:u:p:r:h")) != -1)
+    while ((c = getopt(argc, argv, "i:f:c:S:s:u:p:C:r:h")) != -1)
     {
         switch (c)
         {
@@ -103,6 +105,10 @@ parseConfig(int   argc,
                 conf.txPowerSteps.push_back(atoi(optarg));
                 break;
 
+            case 'C':
+                conf.colorSteps.push_back(std::string{optarg});
+                break;
+
             case 'r':
                 conf.txPowerRefreshInterval = atoi(optarg);
                 break;
@@ -115,6 +121,28 @@ parseConfig(int   argc,
                 printUsage();
                 exit(EXIT_FAILURE);
         }
+    }
+
+    const size_t steps = conf.txPowerSteps.size();
+    const size_t colors = conf.colorSteps.size();
+
+    if (colors < steps)
+    {
+        if (colors != 0)
+        {
+            std::cerr << "WARNING: Not enough colors for TX power steps given" << std::endl;
+        }
+
+        size_t diff = steps - colors;
+        while (diff--)
+        {
+            conf.colorSteps.push_back(conf.color);
+        }
+    }
+    else if (colors > steps)
+    {
+        std::cerr << "WARNING: Too many colors for TX power steps given" << std::endl;
+        conf.colorSteps.resize(steps);
     }
 
     return conf;

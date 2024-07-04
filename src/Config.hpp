@@ -1,7 +1,7 @@
 /*  SPDX-License-Identifier: GPL-3.0-or-later
  *
  *  wireless-info-icon
- *  Copyright (C) 2023  Konrad Kosmatka
+ *  Copyright (C) 2023-2024  Konrad Kosmatka
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -28,6 +28,7 @@ struct Config
     int iconSize{32};
     int interval{1000};
     std::vector<int> txPowerSteps{20, 10, 0};
+    std::vector<std::string> colorSteps;
     int txPowerRefreshInterval{30000};
 };
 

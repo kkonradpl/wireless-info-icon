@@ -1,7 +1,7 @@
 /*  SPDX-License-Identifier: GPL-3.0-or-later
  *
  *  wireless-info-icon
- *  Copyright (C) 2023  Konrad Kosmatka
+ *  Copyright (C) 2023-2024  Konrad Kosmatka
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -31,8 +31,13 @@ Icon::Icon(Controller   &_ctrl,
     this->font = new QFont(conf.font.c_str(), fontSize);
     this->color = new QColor(conf.color.c_str());
     
+    for (auto &txColor : conf.colorSteps)
+    {
+        this->colorSteps.push_back(new QColor(txColor.c_str()));
+    }
+
     this->txChangeTimer = new QTimer(this);
-    txChangeTimer->setSingleShot(true);
+    this->txChangeTimer->setSingleShot(true);
 
     this->setToolTip(conf.name.c_str());
     this->forceUpdate();
@@ -49,9 +54,14 @@ Icon::~Icon()
 {
     killTimer(this->redrawTimerId);
 
-    delete txChangeTimer;
-    delete color;
-    delete font;
+    for (QColor *txColor : this->colorSteps)
+    {
+        delete txColor;
+    }
+
+    delete this->txChangeTimer;
+    delete this->color;
+    delete this->font;
 }
 
 void
@@ -90,11 +100,13 @@ Icon::update()
     }
 
     if(this->lastRx != this->rx ||
-       this->lastTx != this->tx)
+       this->lastTx != this->tx ||
+       this->lastId != this->txPowerId)
     {
         this->redraw();
         this->lastRx = this->rx;
         this->lastTx = this->tx;
+        this->lastId = this->txPowerId;
     }
 
     if (!this->isVisible())
@@ -110,13 +122,14 @@ Icon::redraw()
     pixmap.fill(Qt::transparent);
 
     QPainter painter{&pixmap};
-    painter.setFont(*font);
-    painter.setPen(*color);
+    painter.setFont(*this->font);
+    painter.setPen(*this->color);
 
     char text[16];
     snprintf(text, sizeof(text), "R%c%2d", (rx < 0 ? '-' : '+'), abs(rx));
     painter.drawText(1, 1, this->conf.iconSize, this->conf.iconSize / 2, 0, text);
 
+    painter.setPen(*this->colorSteps[this->txPowerId]);
     snprintf(text, sizeof(text), "T%c%2d", (tx < 0 ? '-' : '+'), abs(tx));
     painter.drawText(1, this->conf.iconSize / 2, this->conf.iconSize, this->conf.iconSize / 2, 0, text);
 

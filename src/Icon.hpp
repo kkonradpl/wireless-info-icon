@@ -1,7 +1,7 @@
 /*  SPDX-License-Identifier: GPL-3.0-or-later
  *
  *  wireless-info-icon
- *  Copyright (C) 2023  Konrad Kosmatka
+ *  Copyright (C) 2023-2024  Konrad Kosmatka
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -47,6 +47,7 @@ private:
 
     QFont *font;
     QColor *color;
+    std::vector<QColor*> colorSteps;
     QTimer *txChangeTimer;
 
     int txPowerId = 0;
@@ -56,6 +57,7 @@ private:
     int tx = 0;
     int lastRx = 0;
     int lastTx = 0;
+    int lastId = 0;
 
     int redrawTimerId = 0;
 };
