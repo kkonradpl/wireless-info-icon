@@ -1,7 +1,7 @@
 /*  SPDX-License-Identifier: GPL-3.0-or-later
  *
  *  wireless-info-icon
- *  Copyright (C) 2023  Konrad Kosmatka
+ *  Copyright (C) 2023-2024  Konrad Kosmatka
  *
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
 #include <string>
 #include <cstring>
 #include <cmath>
+#include <iostream>
 #include <linux/wireless.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -48,8 +49,7 @@ Controller::isAvailable()
     iwreq request;
     this->prepare(&request);
 
-    const int ret = ioctl(this->fd, SIOCGIWNAME, &request);
-    return ret >= 0;
+    return this->ioctl(&request, SIOCGIWNAME);
 }
 
 bool
@@ -62,7 +62,7 @@ Controller::getRxPower(int &rxOut)
     request.u.data.pointer = &stats;
     request.u.data.length = sizeof(iw_statistics);
 
-    if (ioctl(this->fd, SIOCGIWSTATS, &request) >= 0 &&
+    if (this->ioctl(&request, SIOCGIWSTATS) &&
         stats.qual.updated & IW_QUAL_DBM)
     {
         rxOut = stats.qual.level - 256;
@@ -78,7 +78,8 @@ Controller::getTxPower(int &txOut)
     iwreq request;
     this->prepare(&request);
     request.u.txpower.flags = 0;
-    if (ioctl(this->fd, SIOCGIWTXPOW, request) < 0)
+
+    if (!this->ioctl(&request, SIOCGIWTXPOW))
     {
         return false;
     }
@@ -100,14 +101,13 @@ Controller::setTxPower(int tx)
 {   
     iwreq request;
     this->prepare(&request);
-    request.u.txpower.value = -1;
+
     request.u.txpower.fixed = 1;
     request.u.txpower.disabled = 0;
     request.u.txpower.flags = IW_TXPOW_DBM;
     request.u.txpower.value = tx;
 
-    const int ret = ioctl(this->fd, SIOCSIWTXPOW, request);
-    return ret >= 0;
+    return this->ioctl(&request, SIOCSIWTXPOW);
 }
 
 void
@@ -116,3 +116,19 @@ Controller::prepare(iwreq *request)
     memset(request, 0, sizeof(iwreq));
     snprintf(request->ifr_name, IFNAMSIZ, "%s", this->name.c_str());
 }
+
+bool
+Controller::ioctl(iwreq *request,
+                  int    sio)
+{
+    const int ret = ::ioctl(this->fd, sio, request);
+    if (ret < 0)
+    {
+        std::cerr << "ioctl 0x" << std::hex << sio << " failed"
+                  << " (" << std::dec << ret << ")" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
